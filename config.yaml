@@ -1,0 +1,206 @@
+project:
+  name: robustness
+  repo_root: /PATH/robustness
+paths:
+  output_root: /PATH/thesis_outputs
+  corpus_root: /PATH/thesis_data/corpora
+benchmark:
+  source_csv: /PATH/thesis_data/benchmark/RadSaFE-200.csv
+  runtime_json: /PATH/thesis_data/benchmark/radiology_200.json
+  expected_total_questions: 200
+corpora:
+  clean: /PATH/thesis_data/corpora/clean
+  numerical:
+    num010: /PATH/thesis_data/corpora/corrupted/numerical_010
+    num025: /PATH/thesis_data/corpora/corrupted/numerical_025
+    num050: /PATH/thesis_data/corpora/corrupted/numerical_050
+    num100: /PATH/thesis_data/corpora/corrupted/numerical_100
+  coverage: &id001
+    cov010: /PATH/thesis_data/corpora/corrupted/Coverage010
+    cov025: /PATH/thesis_data/corpora/corrupted/Coverage025
+    cov050: /PATH/thesis_data/corpora/corrupted/Coverage050
+    cov100: /PATH/thesis_data/corpora/corrupted/Coverage100
+outputs:
+  corruption_direct_evidence: /PATH/thesis_outputs/corruption_direct_evidence
+  repeat_no_retrieval_classification: /PATH/thesis_outputs/repeat_no_retrieval_classification
+  report_models_source_ablation: /PATH/thesis_outputs/report_models_source_ablation
+  formal_reports: /PATH/thesis_outputs/reports
+  formal_report_settings: /PATH/thesis_outputs/report_settings
+models:
+  report_model: custom:nvidia/Qwen3.8-Flash-Next-NVFP4
+  answering:
+  - Qwen/Qwen3.5-9B
+  - meta-llama/Meta-Llama-3.1-8B-Instruct
+  - mistralai/Mistral-7B-Instruct-v0.2
+  - google/medgemma-1.5-4b-it
+  - deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
+  - Qwen/Qwen3.5-122B-A10B-GPTQ-Int4
+  - google/gemma-4-26B-A4B-it
+  checker_model: Qwen/Qwen3.5-122B-A10B-GPTQ-Int4
+  additional_report_generators:
+  - MJPansa/DeepSeek-V4-Flash-0731-NVFP4
+  - Qwen/Qwen3.5-35B-A3B-GPTQ-Int4
+api:
+  api_url_env: CUSTOM_API_URL
+  api_key_env: CUSTOM_API_KEY
+report_generation:
+  search_api: local
+  temperature: 0
+  max_tokens: 1536
+  max_search_depth: 2
+  recursion_limit: 60
+  max_attempts: 3
+  timeout_seconds: 600
+  max_concurrency: 2
+  reasoning_effort: none
+retrieval:
+  volume:
+    padding_seed: 20260909
+answering:
+  temperature: 0
+  max_tokens: 4096
+  max_attempts: 3
+  max_concurrency: 2
+  model_overrides:
+    Qwen/Qwen3.5-9B:
+      enable_thinking: false
+    Qwen/Qwen3.5-122B-A10B-GPTQ-Int4:
+      enable_thinking: false
+style_rewrite:
+  temperature_first_attempt: 0
+  temperature_retry: 0.7
+  max_attempts: 3
+  rewrite_max_tokens: 8192
+  checker_max_tokens: 16
+  timeout_seconds: 600
+  max_concurrency: 2
+  styles:
+  - forum
+  - overconfident
+  - hedged
+  - review
+conditions:
+  corruption_direct_evidence:
+  - clean
+  - num010
+  - num025
+  - num050
+  - num100
+  - cov010
+  - cov025
+  - cov050
+  - cov100
+  - closedbook
+  - ev_clean
+  - ev_conflict
+  - ev_numeric
+  - ev_forum
+  - ev_overconfident
+  - ev_hedged
+  - ev_review
+  repeat_no_retrieval_classification:
+  - clean_r2
+  - clean_r3
+  - noretrieval
+  retrieval_depth_padding:
+  - topk01_pad00
+  - topk03_pad00
+  - topk05_pad00
+  - topk10_pad00
+  - topk20_pad00
+  - topk05_pad50
+  - topk05_pad75
+  - topk05_pad90
+  - topk05_pad95
+  report_models_source_ablation:
+  - top1_100
+  - dsv4_clean
+  - dsv4_clean_r2
+  - dsv4_num100
+  - dsv4_cov100
+  - dsv4_noretrieval
+  - q35_clean
+  - q35_clean_r2
+  - q35_num100
+  - q35_cov100
+  - q35_noretrieval
+coverage_rebuild:
+  seed: 20260907
+  source_clean_reports: /PATH/thesis_outputs/reports/clean.json
+  output_corpora: *id001
+content_check_2:
+  temperature: 0
+  max_tokens: 256
+  max_attempts: 3
+  timeout_seconds: 600
+direct_rag:
+  bm25:
+    k1: 1.5
+    b: 0.75
+    epsilon: 0.25
+  top_k: 5
+  passage_chars: 2000
+  evidence_char_cap: 12000
+  outputs:
+    evidence_dir: /PATH/thesis_outputs/retrieval
+    cache_dir: /PATH/thesis_outputs/cache/direct_rag
+    settings_json: /PATH/thesis_outputs/settings/direct_rag_retrieval.json
+    input_manifest_json: /PATH/thesis_outputs/settings/direct_rag_input_manifest.json
+numerical_matching:
+  dataset: RadSaFE-200
+  source_article_root: /PATH/thesis_data/corpora/clean
+  deterministic_conditions:
+    num010:
+      report: /PATH/thesis_outputs/reports/num010.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_010_audit.json
+    num025:
+      report: /PATH/thesis_outputs/reports/num025.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_025_audit.json
+    num050:
+      report: /PATH/thesis_outputs/reports/num050.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_050_audit.json
+    num100:
+      report: /PATH/thesis_outputs/reports/num100.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+    clean:
+      report: /PATH/thesis_outputs/reports/clean.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+    clean_r2:
+      report: /PATH/thesis_outputs/reports/clean_r2.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+    clean_r3:
+      report: /PATH/thesis_outputs/reports/clean_r3.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+    dsv4_clean:
+      report: /PATH/thesis_outputs/report_models_source_ablation/reports/dsv4_clean.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+    dsv4_clean_r2:
+      report: /PATH/thesis_outputs/report_models_source_ablation/reports/dsv4_clean_r2.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+    dsv4_num100:
+      report: /PATH/thesis_outputs/report_models_source_ablation/reports/dsv4_num100.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+    q35_clean:
+      report: /PATH/thesis_outputs/report_models_source_ablation/reports/q35_clean.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+    q35_clean_r2:
+      report: /PATH/thesis_outputs/report_models_source_ablation/reports/q35_clean_r2.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+    q35_num100:
+      report: /PATH/thesis_outputs/report_models_source_ablation/reports/q35_num100.json
+      mutation_log: /PATH/thesis_outputs/corruption_logs/numerical_100_audit.json
+  outputs:
+    deterministic_csv: /PATH/thesis_outputs/analysis/numerical_matching/deterministic_13_conditions.csv
+    match_inventory_csv: /PATH/thesis_outputs/analysis/numerical_matching/match_inventory.csv
+  report_models:
+    main: custom:nvidia/Qwen3.8-Flash-Next-NVFP4
+    dsv4: MJPansa/DeepSeek-V4-Flash-0731-NVFP4
+    q35: Qwen/Qwen3.5-35B-A3B-GPTQ-Int4
+result_tables:
+  output_dir: /PATH/thesis_outputs/analysis/result_tables
+  answers_root: /PATH/thesis_outputs/answers
+  second_reader_csv: /PATH/thesis_data/benchmark/RadSaFE-200_second_reader_annotated.csv
+propagation_tables:
+  output_dir: /PATH/thesis_outputs/analysis/propagation_tables
+reported_counts:
+  output_dir: /PATH/thesis_outputs/analysis/reported_counts
